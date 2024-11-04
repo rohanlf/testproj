@@ -3,6 +3,7 @@ const df = require("durable-functions");
 df.app.orchestration("DefaultSubOrchestrator", function* (context) {
     
    const config = context.df.getInput();
+
    const step = config.step;
    let results = config.results;
 
@@ -12,10 +13,8 @@ df.app.orchestration("DefaultSubOrchestrator", function* (context) {
           const batchSize = step.metaData.batchSize ?? 1;
 
           let batchResults = [];
-          for (let i = 0; i < results.length; i += batchSize) { // batchwise processing
+          for (let i = 0; i < 1; i += batchSize) { // batchwise processing
              const batch = results.slice(i, i + batchSize);
-
-             // ---------------fan-out/fan-in-------------
              const tasks = batch.map((result) =>
                 context.df.callActivity(getActivityFunctionForUseCase(step.type, step.connectorType), {
                    metaData: step.metaData,
@@ -24,13 +23,13 @@ df.app.orchestration("DefaultSubOrchestrator", function* (context) {
              );
 
              const batchResult = yield context.df.Task.all(tasks);
-             // ---------------fan-out/fan-in-------------
 
              batchResults = batchResults.concat(batchResult);
           }
           return { results: batchResults }
 
        } else { 
+
           results = yield context.df.callActivity(getActivityFunctionForUseCase(step.type, step.connectorType), {
              metaData: step.metaData,
              results,
@@ -41,11 +40,11 @@ df.app.orchestration("DefaultSubOrchestrator", function* (context) {
     }
  } else {
 
-
     results = yield context.df.callActivity(getActivityFunctionForUseCase(step.type, step.connectorType), {
        metaData: step.metaData,
        results,
     });
+
 
     return results;
     
@@ -56,16 +55,19 @@ df.app.orchestration("DefaultSubOrchestrator", function* (context) {
 
 
 function getActivityFunctionForUseCase(type, connectorType) {
-    if(type == "connector") {
+      if(type == "connector") {
         switch(connectorType) {
             case "API":
-                return "FetchDataFromApi"
-            case "FileStore":
-                // implementation for specific connector type
-                break;
+               return "FetchDataFromApi"
+            default:
+               return null
         }
-       } else {
-            // Handle other types
-       }
+      } else if (type == "transformation") {
+         switch(connectorType) {
+            case "Grouping":
+               return "TransformData"
+            default:
+               return null
+         }
+      }
 }
-   

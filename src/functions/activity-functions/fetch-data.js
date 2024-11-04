@@ -11,6 +11,9 @@ df.app.activity('FetchDataFromApi', {
 
         for(const path of pathArray) {
 
+          
+          // console.log("🚀 ~ handler: ~ input.result:", input.result)
+
           const dynamicPath = path.path;
           const actualPath = getValueByPath(input.result, dynamicPath); // handle dynamic paths
           

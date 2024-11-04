@@ -1,13 +1,15 @@
 const df = require('durable-functions');
 const fs = require('fs');
 const path = require('path');
+require('./sub-orchestrators/DefaultSubOrchestrator')
     
 df.app.orchestration('MainOrchestrator', function* (context) {
 
     const config = context.df.getInput(); // Get the configuration JSON object
     context.log(`Received configuration: ${JSON.stringify(config)}`);
 
-    let secondLevelOrchestratorName
+    let secondLevelOrchestratorName = "";
+    
     if(config.orchestrator === "default"){
         secondLevelOrchestratorName = "DefaultSubOrchestrator"
     } else {
@@ -17,6 +19,7 @@ df.app.orchestration('MainOrchestrator', function* (context) {
 
     let results = {}
     // Loop through each step in the config
+
     for (const step of config.executionSteps) {
         const subOrchParam = {
             results,
